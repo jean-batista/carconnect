@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,8 +11,6 @@ import java.util.UUID;
 import banco.BancoDeDados;
 import banco.BancoException;
 import dao.interfaces.VendedorDao;
-import entidades.Cliente;
-import entidades.Negociacao;
 import entidades.Vendedor;
 
 public class VendedorDaoImpl implements VendedorDao {
@@ -27,7 +24,7 @@ public class VendedorDaoImpl implements VendedorDao {
     }
 
     @Override
-    public void cadastro(Vendedor vendedor) {
+    public Vendedor cadastro(Vendedor vendedor) {
         String sql = "INSERT INTO tabela_vendedor (id) VALUES (?)";
         PreparedStatement st = null;
         try {
@@ -37,6 +34,7 @@ public class VendedorDaoImpl implements VendedorDao {
 
             // Ocorre um erro caso nao houver linhas alteradas
             if(linhasAlteradas == 0) throw new BancoException("Não foi possível cadastrar o vendedor");
+            return vendedor;
         } catch (Exception e) {
             throw new BancoException("Erro: " + e.getMessage());
         } finally {
@@ -44,36 +42,34 @@ public class VendedorDaoImpl implements VendedorDao {
         }
     }
 
-    // TODO implementar metodo caso tiver solucao
     @Override
-    public void efetuarVenda(Cliente cliente) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'efetuarVenda'");
-    }
-
-    // TODO implementar metodo caso tiver solucao
-    @Override
-    public List<Negociacao> historicoDeVendas() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'historicoDeVendas'");
-    }
-
-    @Override
-    public Vendedor buscarPorId(UUID id) {
-        String sql = "SELECT * FROM tabela_vendedor WHERE id = ?";
+    public Vendedor buscarVendedorPorId(UUID id) {
+        // Faz o JOIN com a tabela_pessoa para trazer todos os atributos cadastrais em uma única consulta
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_vendedor v " +
+                     "INNER JOIN tabela_pessoa p ON v.id = p.id " +
+                     "WHERE v.id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Vendedor vazio
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, id.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                vendedor.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Venedor
+
+            if (rs.next()) {
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("id")));
+                vendedor.setNome(rs.getString("nome"));
+                vendedor.setSobrenome(rs.getString("sobrenome"));
+                vendedor.setEmail(rs.getString("email"));
+                vendedor.setTelefone(rs.getString("telefone"));
+                vendedor.setCpf(rs.getString("cpf"));
+                vendedor.setSenha(rs.getString("senha"));
+                return vendedor;
             }
-            return vendedor;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+            return null;
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar vendedor por ID: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -81,33 +77,35 @@ public class VendedorDaoImpl implements VendedorDao {
     }
 
     @Override
-    public List<Vendedor> listarVendedoresCadastrados() {
-        String sql = "SELECT * FROM tabela_vendedor";
-        Statement st = null;
+    public List<Vendedor> buscarVendedoresCadastrados() {
+        // Traz todas as pessoas que são vendedoras através do INNER JOIN
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_vendedor v " +
+                     "INNER JOIN tabela_pessoa p ON v.id = p.id";
+        PreparedStatement st = null;
         ResultSet rs = null;
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Cliente vazio
-        List<Vendedor> vendedores = new ArrayList<>(); // Cria uma lista de vendedores vazia
+        List<Vendedor> vendedores = new ArrayList<>();
         try {
-            st = connection.createStatement();
-            rs = st.executeQuery(sql);
-            while(rs.next()) {
-                vendedor.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Pessoa
+            st = connection.prepareStatement(sql);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("id")));
+                vendedor.setNome(rs.getString("nome"));
+                vendedor.setSobrenome(rs.getString("sobrenome"));
+                vendedor.setEmail(rs.getString("email"));
+                vendedor.setTelefone(rs.getString("telefone"));
+                vendedor.setCpf(rs.getString("cpf"));
+                vendedor.setSenha(rs.getString("senha"));
                 vendedores.add(vendedor);
             }
             return vendedores;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao listar vendedores cadastrados: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
         }
-    }
-
-    // TODO implementar metodo caso tiver solucao
-    @Override
-    public void atualizarCadastro(Vendedor vendedor) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'atualizarCadastro'");
     }
 
     @Override
@@ -125,5 +123,4 @@ public class VendedorDaoImpl implements VendedorDao {
             BancoDeDados.closeStatement(st);
         }
     }
-    
 }
