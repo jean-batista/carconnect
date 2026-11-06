@@ -10,7 +10,6 @@ public interface GestorDao {
     void cadastrar(Gestor gestor);
     Gestor buscarGestor(UUID id);
     List<Gestor> listarGestores();
-    void atualizarCadastro(Gestor gestor);
     void excluirGestor(Gestor gestor);
 
 }

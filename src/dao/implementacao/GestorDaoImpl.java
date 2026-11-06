@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,9 +33,11 @@ public class GestorDaoImpl implements GestorDao {
             int linhasAlteradas = st.executeUpdate();
 
             // Ocorre um erro caso nao houver linhas alteradas
-            if(linhasAlteradas == 0) throw new BancoException("Não foi possível cadastrar o gestor");
-        } catch (Exception e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            if (linhasAlteradas == 0) {
+                throw new BancoException("Não foi possível cadastrar o gestor");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao cadastrar gestor: " + e.getMessage());
         } finally {
             BancoDeDados.closeStatement(st);
         }
@@ -44,20 +45,34 @@ public class GestorDaoImpl implements GestorDao {
 
     @Override
     public Gestor buscarGestor(UUID id) {
-        String sql = "SELECT * FROM tabela_gestor WHERE id = ?";
+        // Faz o JOIN com a tabela_pessoa para trazer todos os atributos cadastrais em uma única consulta
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_gestor g " +
+                     "INNER JOIN tabela_pessoa p ON g.id = p.id " +
+                     "WHERE g.id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        Gestor gestor = new Gestor(); // Cria um objeto Gestor vazio
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, id.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                gestor.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Gestor
+
+            if (rs.next()) {
+                Gestor gestor = new Gestor();
+                gestor.setId(UUID.fromString(rs.getString("id")));
+                gestor.setNome(rs.getString("nome"));
+                gestor.setSobrenome(rs.getString("sobrenome"));
+                gestor.setEmail(rs.getString("email"));
+                gestor.setTelefone(rs.getString("telefone"));
+                gestor.setCpf(rs.getString("cpf"));
+                gestor.setSenha(rs.getString("senha"));
+
+                return gestor;
             }
-            return gestor;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+            return null;
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar gestor por ID: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -66,48 +81,56 @@ public class GestorDaoImpl implements GestorDao {
 
     @Override
     public List<Gestor> listarGestores() {
-        String sql = "SELECT * FROM tabela_gestor";
-        Statement st = null;
+        // Traz todas as pessoas que são gestoras através do INNER JOIN
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_gestor g " +
+                     "INNER JOIN tabela_pessoa p ON g.id = p.id";
+        PreparedStatement st = null;
         ResultSet rs = null;
-        Gestor gestor = new Gestor(); // Cria um objeto Gestor vazio
-        List<Gestor> gestores = new ArrayList<>(); // Cria uma lista de gestores vazia
+        List<Gestor> gestores = new ArrayList<>();
+
         try {
-            st = connection.createStatement();
-            rs = st.executeQuery(sql);
-            while(rs.next()) {
-                gestor.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Gestor
+            st = connection.prepareStatement(sql);
+            rs = st.executeQuery();
+
+            while (rs.next()) {
+                Gestor gestor = new Gestor();
+                gestor.setId(UUID.fromString(rs.getString("id")));
+                gestor.setNome(rs.getString("nome"));
+                gestor.setSobrenome(rs.getString("sobrenome"));
+                gestor.setEmail(rs.getString("email"));
+                gestor.setTelefone(rs.getString("telefone"));
+                gestor.setCpf(rs.getString("cpf"));
+                gestor.setSenha(rs.getString("senha"));
+
                 gestores.add(gestor);
             }
             return gestores;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao listar gestores cadastrados: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
         }
     }
 
-    // TODO implementar metodo caso tiver solucao
-    @Override
-    public void atualizarCadastro(Gestor gestor) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'atualizarCadastro'");
-    }
-
     @Override
     public void excluirGestor(Gestor gestor) {
         String sql = "DELETE FROM tabela_gestor WHERE id = ?";
         PreparedStatement st = null;
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, gestor.getId().toString());
             int linhasAlteradas = st.executeUpdate();
-            if(linhasAlteradas == 0) throw new BancoException("O gestor não pode ser excluído");
-        } catch(SQLException e) {
-            throw new BancoException("Erro: " + e.getMessage());
+
+            if (linhasAlteradas == 0) {
+                throw new BancoException("O gestor não pode ser excluído");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao excluir gestor: " + e.getMessage());
         } finally {
             BancoDeDados.closeStatement(st);
         }
     }
-    
 }
