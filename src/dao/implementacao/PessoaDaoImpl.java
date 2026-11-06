@@ -25,7 +25,7 @@ public class PessoaDaoImpl implements PessoaDao {
     }
 
     @Override
-    public void inserir(Pessoa pessoa) {
+    public Pessoa inserir(Pessoa pessoa) {
         String sql = "INSERT INTO tabela_pessoa (id, nome, sobrenome, email, telefone, cpf, senha) VALUES (?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement st = null;
         try {
@@ -43,6 +43,7 @@ public class PessoaDaoImpl implements PessoaDao {
             
             // Ocorre um erro caso nao houver linhas alteradas
             if(linhasAlteradas == 0) throw new BancoException("Não foi possível inserir o usuário");
+            return pessoa;
         } catch (Exception e) {
             throw new BancoException("Erro: " + e.getMessage());
         } finally {

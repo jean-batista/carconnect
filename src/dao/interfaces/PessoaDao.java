@@ -8,7 +8,7 @@ import entidades.Pessoa;
 public interface PessoaDao {
     
     // Insere uma Pessoa
-    void inserir(Pessoa pessoa);
+    Pessoa inserir(Pessoa pessoa);
 
     // Busca uma Pessoa por id
     Pessoa buscarPorId(UUID id);

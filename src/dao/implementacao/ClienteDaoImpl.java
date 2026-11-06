@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +29,7 @@ public class ClienteDaoImpl implements ClienteDao {
     }
 
     @Override
-    public void cadastro(Cliente cliente) {
+    public Cliente cadastro(Cliente cliente) {
         String sql = "INSERT INTO tabela_cliente (id) VALUES (?)";
         PreparedStatement st = null;
         try {
@@ -40,6 +39,7 @@ public class ClienteDaoImpl implements ClienteDao {
 
             // Ocorre um erro caso nao houver linhas alteradas
             if(linhasAlteradas == 0) throw new BancoException("Não foi possível cadastrar o cliente");
+            return cliente;
         } catch (Exception e) {
             throw new BancoException("Erro: " + e.getMessage());
         } finally {
@@ -47,56 +47,84 @@ public class ClienteDaoImpl implements ClienteDao {
         }
     }
 
-    @Override
     public Cliente buscarClientePorId(UUID id) {
-        String sql = "SELECT * FROM tabela_cliente WHERE id = ?";
+        // Faz o JOIN entre a tabela cliente (c) e a tabela pessoa (p) usando o ID.
+        // Assim buscamos todos os atributos herdados e específicos em uma ÚNICA consulta!
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_cliente c " +
+                     "INNER JOIN tabela_pessoa p ON c.id = p.id " +
+                     "WHERE c.id = ?";
+
         PreparedStatement st = null;
         ResultSet rs = null;
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, id.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                cliente.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Cliente
+
+            if (rs.next()) {
+                // Instancia o objeto Cliente já preenchendo todos os dados vindos do JOIN
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("id")));
+                cliente.setNome(rs.getString("nome"));
+                cliente.setSobrenome(rs.getString("sobrenome"));
+                cliente.setEmail(rs.getString("email"));
+                cliente.setTelefone(rs.getString("telefone"));
+                cliente.setCpf(rs.getString("cpf"));
+                cliente.setSenha(rs.getString("senha"));
+
+                return cliente;
             }
-            return cliente;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+
+            // Retorna null caso não encontre nenhum cliente com o ID especificado
+            return null;
+
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar cliente por ID: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
         }
     }
 
-    @Override
+    @Override 
     public List<Cliente> buscarClientesCadastrados() {
-        String sql = "SELECT * FROM tabela_cliente";
-        Statement st = null;
+        // Realiza o JOIN trazendo todas as pessoas que estão cadastradas como clientes
+        String sql = "SELECT p.id, p.nome, p.sobrenome, p.email, p.telefone, p.cpf, p.senha " +
+                     "FROM tabela_cliente c " +
+                     "INNER JOIN tabela_pessoa p ON c.id = p.id";
+
+        PreparedStatement st = null;
         ResultSet rs = null;
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
-        List<Cliente> clientes = new ArrayList<>(); // Cria uma lista de clientes vazia
+        List<Cliente> clientes = new ArrayList<>();
+
         try {
-            st = connection.createStatement();
-            rs = st.executeQuery(sql);
-            while(rs.next()) {
-                cliente.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Pessoa
+            st = connection.prepareStatement(sql);
+            rs = st.executeQuery();
+
+            // Usamos o while para percorrer todas as linhas retornadas pelo banco de dados
+            while (rs.next()) {
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("id")));
+                cliente.setNome(rs.getString("nome"));
+                cliente.setSobrenome(rs.getString("sobrenome"));
+                cliente.setEmail(rs.getString("email"));
+                cliente.setTelefone(rs.getString("telefone"));
+                cliente.setCpf(rs.getString("cpf"));
+                cliente.setSenha(rs.getString("senha"));
+
                 clientes.add(cliente);
             }
+
             return clientes;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar clientes cadastrados: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
         }
-    }
-
-    // TODO implementar metodo caso tiver solucao
-    @Override
-    public void atualizarCadastro(Cliente cliente) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'atualizarCadastro'");
     }
 
     @Override
