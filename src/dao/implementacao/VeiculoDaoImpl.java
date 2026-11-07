@@ -29,7 +29,8 @@ public class VeiculoDaoImpl implements VeiculoDao {
         String sql = "INSERT INTO tabela_veiculo (id, marca, modelo, ano, combustivel, condicao, preco, quantidade_estoque) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement st = null;
         try {
-            veiculo.setId(UUID.randomUUID()); // Gera um UUID aleatoriamente
+            // Gera obrigatoriamente um novo UUID para a entidade Veiculo no cadastro
+            veiculo.setId(UUID.randomUUID());
 
             st = connection.prepareStatement(sql);
             st.setString(1, veiculo.getId().toString()); // Define o id
@@ -40,14 +41,15 @@ public class VeiculoDaoImpl implements VeiculoDao {
             st.setString(6, veiculo.getCondicao()); // Define a condicao
             st.setDouble(7, veiculo.getPreco()); // Define o preco
             st.setInt(8, veiculo.getQuantidadeEstoque()); // Define a quantidade em estoque
+            
             int linhasAlteradas = st.executeUpdate(); // Executa as mudancas
             
-            // Ocorre um erro caso nao houver linhas alteradas
-            if(linhasAlteradas == 0) throw new BancoException("Não foi possível cadastrar o veiculo");
-        } catch (Exception e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            if (linhasAlteradas == 0) {
+                throw new BancoException("Não foi possível cadastrar o veículo");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao cadastrar veículo: " + e.getMessage());
         } finally {
-            // Fecha a conexao com o banco de dados independentemente so `try` ou `catch`
             BancoDeDados.closeStatement(st);
         }
     }
@@ -57,24 +59,26 @@ public class VeiculoDaoImpl implements VeiculoDao {
         String sql = "SELECT * FROM tabela_veiculo WHERE id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Vendedor vazio
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, id.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                veiculo.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Veiculo
-                veiculo.setMarca(rs.getString("marca")); // Define a marca no objeto Veiculo
-                veiculo.setModelo(rs.getString("modelo")); // Define o modelo no objeto Veiculo
-                veiculo.setAno(rs.getInt("ano")); // Define o ano no objeto Veiculo
-                veiculo.setCombustivel(rs.getString("combustivel")); // Define o combustivel no obejto Veiculo
-                veiculo.setCondicao(rs.getString("condicao")); // Define a condicao no objeto Veiculo
-                veiculo.setPreco(rs.getDouble("preco")); // Define o preco no objeto Veiculo
-                veiculo.setQuantidadeEstoque(rs.getInt("quantidade_estoque")); // Define a quantidade em estoque no objeto Veiculo
+            
+            if (rs.next()) {
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("id")));
+                veiculo.setMarca(rs.getString("marca"));
+                veiculo.setModelo(rs.getString("modelo"));
+                veiculo.setAno(rs.getInt("ano"));
+                veiculo.setCombustivel(rs.getString("combustivel"));
+                veiculo.setCondicao(rs.getString("condicao"));
+                veiculo.setPreco(rs.getDouble("preco"));
+                veiculo.setQuantidadeEstoque(rs.getInt("quantidade_estoque"));
+                return veiculo;
             }
-            return veiculo;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+            return null;
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar veículo por ID: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -83,28 +87,30 @@ public class VeiculoDaoImpl implements VeiculoDao {
 
     @Override
     public List<Veiculo> buscarVeiculos() {
-        String sql = "SELECT * FROM tabela_veiculo WHERE id = ?";
+        String sql = "SELECT * FROM tabela_veiculo";
         Statement st = null;
         ResultSet rs = null;
-        List<Veiculo> veiculos = new ArrayList<>(); // Cria uma lista de veiculos vazia
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Vendedor vazio
+        List<Veiculo> veiculos = new ArrayList<>();
         try {
             st = connection.createStatement();
             rs = st.executeQuery(sql);
-            while(rs.next()) {
-                veiculo.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Veiculo
-                veiculo.setMarca(rs.getString("marca")); // Define a marca no objeto Veiculo
-                veiculo.setModelo(rs.getString("modelo")); // Define o modelo no objeto Veiculo
-                veiculo.setAno(rs.getInt("ano")); // Define o ano no objeto Veiculo
-                veiculo.setCombustivel(rs.getString("combustivel")); // Define o combustivel no obejto Veiculo
-                veiculo.setCondicao(rs.getString("condicao")); // Define a condicao no objeto Veiculo
-                veiculo.setPreco(rs.getDouble("preco")); // Define o preco no objeto Veiculo
-                veiculo.setQuantidadeEstoque(rs.getInt("quantidade_estoque")); // Define a quantidade em estoque no objeto Veiculo
+            
+            while (rs.next()) {
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("id")));
+                veiculo.setMarca(rs.getString("marca"));
+                veiculo.setModelo(rs.getString("modelo"));
+                veiculo.setAno(rs.getInt("ano"));
+                veiculo.setCombustivel(rs.getString("combustivel"));
+                veiculo.setCondicao(rs.getString("condicao"));
+                veiculo.setPreco(rs.getDouble("preco"));
+                veiculo.setQuantidadeEstoque(rs.getInt("quantidade_estoque"));
+                
                 veiculos.add(veiculo);
             }
             return veiculos;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao listar veículos: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -113,24 +119,31 @@ public class VeiculoDaoImpl implements VeiculoDao {
 
     @Override
     public void atualizar(Veiculo veiculo) {
-        if(veiculo.getId() == null) throw new BancoException("O id do veículo não pode ser nulo");
-        String sql = "UPDATE tabela_veiculo SET marca = ?, modelo = ?, ano = ?, combustivel = ?, condicao = ?, preco = ? WHERE id = ?";
+        if (veiculo.getId() == null) {
+            throw new BancoException("O id do veículo não pode ser nulo para atualização");
+        }
+        
+        String sql = "UPDATE tabela_veiculo SET marca = ?, modelo = ?, ano = ?, combustivel = ?, condicao = ?, preco = ?, quantidade_estoque = ? WHERE id = ?";
         PreparedStatement st = null;
 
         try {
             st = connection.prepareStatement(sql);
-            if(veiculo.getMarca() != null) st.setString(1, veiculo.getMarca());
-            if(veiculo.getModelo() != null) st.setString(2, veiculo.getModelo());
-            if(veiculo.getAno() != null) st.setInt(3, veiculo.getAno());
-            if(veiculo.getCombustivel() != null) st.setString(4, veiculo.getCombustivel());
-            if(veiculo.getCondicao() != null) st.setString(5, veiculo.getCondicao());
-            if(veiculo.getPreco() != null) st.setDouble(6, veiculo.getPreco());
-            st.setString(7, veiculo.getId().toString());
+            st.setString(1, veiculo.getMarca());
+            st.setString(2, veiculo.getModelo());
+            st.setInt(3, veiculo.getAno());
+            st.setString(4, veiculo.getCombustivel());
+            st.setString(5, veiculo.getCondicao());
+            st.setDouble(6, veiculo.getPreco());
+            st.setInt(7, veiculo.getQuantidadeEstoque());
+            st.setString(8, veiculo.getId().toString());
+
             int linhasAlteradas = st.executeUpdate();
 
-            if(linhasAlteradas == 0) throw new BancoException("O veículo não pode ser atualizado");
-        } catch(SQLException e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            if (linhasAlteradas == 0) {
+                throw new BancoException("O veículo não foi encontrado para atualização");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao atualizar veículo: " + e.getMessage());
         } finally {
             BancoDeDados.closeStatement(st);
         }
@@ -144,9 +157,12 @@ public class VeiculoDaoImpl implements VeiculoDao {
             st = connection.prepareStatement(sql);
             st.setString(1, veiculo.getId().toString());
             int linhasAlteradas = st.executeUpdate();
-            if(linhasAlteradas == 0) throw new BancoException("O veículo não pode ser excluído");
-        } catch(SQLException e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            
+            if (linhasAlteradas == 0) {
+                throw new BancoException("O veículo não pôde ser excluído");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao excluir veículo: " + e.getMessage());
         } finally {
             BancoDeDados.closeStatement(st);
         }
@@ -158,16 +174,18 @@ public class VeiculoDaoImpl implements VeiculoDao {
         PreparedStatement st = null;
         try {
             st = connection.prepareStatement(sql);
-            st.setInt(1, veiculo.getQuantidadeEstoque());
+            st.setInt(1, unidades);
             st.setString(2, veiculo.getId().toString());
             int linhasAlteradas = st.executeUpdate();
 
-            if(linhasAlteradas == 0) throw new BancoException("Não foi possível alterar a quantidade no estoque");
-        } catch(Exception e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            if (linhasAlteradas == 0) {
+                throw new BancoException("Não foi possível alterar a quantidade no estoque");
+            }
+            veiculo.setQuantidadeEstoque(unidades);
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao atualizar estoque: " + e.getMessage());
         } finally {
             BancoDeDados.closeStatement(st);
         }
     }
-    
 }
