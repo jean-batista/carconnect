@@ -13,6 +13,9 @@ public interface VeiculoDao {
     // Busca um Veiculo pelo id
     Veiculo buscarVeiculoPeloId(UUID id);
 
+    // Busca um Veiculo pelo id do Gestor
+    List<Veiculo> buscarVeiculosPorGestorId(UUID gestorId);
+
     // Busca todos os veiculos cadastrados
     List<Veiculo> buscarVeiculos();
 

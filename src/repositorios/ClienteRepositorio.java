@@ -3,19 +3,28 @@ package repositorios;
 import java.util.List;
 import java.util.UUID;
 
+import dao.interfaces.AgendamentoDao;
 import dao.interfaces.ClienteDao;
+import dao.interfaces.NegociacaoDao;
 import dao.interfaces.PessoaDao;
+import entidades.Agendamento;
 import entidades.Cliente;
+import entidades.Negociacao;
 import entidades.Pessoa;
 
 public class ClienteRepositorio implements Repositorio<Cliente, UUID> {
 
     private final ClienteDao dao;
     private final PessoaDao pessoaDao;
+    private final AgendamentoDao agendamentoDao;
+    private final NegociacaoDao negociacaoDao;
 
-    public ClienteRepositorio(ClienteDao dao, PessoaDao pessoaDao) {
+    // Construtor completo com injeção de dependências desacoplada
+    public ClienteRepositorio(ClienteDao dao, PessoaDao pessoaDao, AgendamentoDao agendamentoDao, NegociacaoDao negociacaoDao) {
         this.dao = dao;
         this.pessoaDao = pessoaDao;
+        this.agendamentoDao = agendamentoDao;
+        this.negociacaoDao = negociacaoDao;
     }
 
     @Override
@@ -30,10 +39,7 @@ public class ClienteRepositorio implements Repositorio<Cliente, UUID> {
     public Cliente buscarPorId(UUID id) {
         Cliente cliente = dao.buscarClientePorId(id);
         if (cliente != null) {
-            // List<Agendamento> visitas = agendamentoDao.buscarPorClienteId(id);
-            // List<Negociacao> compras = negociacaoDao.buscarPorClienteId(id);
-            // cliente.setVisitas(visitas);
-            // cliente.setCompras(compras);
+            carregarRelacionamentos(cliente);
         }
         return cliente;
     }
@@ -42,10 +48,7 @@ public class ClienteRepositorio implements Repositorio<Cliente, UUID> {
     public List<Cliente> buscarTodos() {
         List<Cliente> clientes = dao.buscarClientesCadastrados();
         for (Cliente cliente : clientes) {
-            // List<Agendamento> visitas = agendamentoDao.buscarPorClienteId(cliente.getId());
-            // List<Negociacao> compras = negociacaoDao.buscarPorClienteId(cliente.getId());
-            // cliente.setVisitas(visitas);
-            // cliente.setCompras(compras);
+            carregarRelacionamentos(cliente);
         }
         return clientes;
     }
@@ -66,6 +69,15 @@ public class ClienteRepositorio implements Repositorio<Cliente, UUID> {
     public void excluir(Cliente cliente) {
         // Devido ao ON DELETE CASCADE no MySQL, excluir a Pessoa apaga automaticamente o Cliente
         pessoaDao.excluir(cliente);
+    }
+
+    private void carregarRelacionamentos(Cliente cliente) {
+        if (cliente.getId() != null) {
+            List<Agendamento> visitas = agendamentoDao.buscarAgendamentosPorCliente(cliente.getId());
+            List<Negociacao> compras = negociacaoDao.buscarNegociacoesPorCliente(cliente.getId());
+            cliente.setVisitas(visitas);
+            cliente.setCompras(compras);
+        }
     }
 
     private void atualizarCampos(Cliente cadastrado, Cliente dados) {

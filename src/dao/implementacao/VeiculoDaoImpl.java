@@ -86,6 +86,43 @@ public class VeiculoDaoImpl implements VeiculoDao {
     }
 
     @Override
+    public List<Veiculo> buscarVeiculosPorGestorId(UUID gestorId) {
+        String sql = "SELECT v.id, v.marca, v.modelo, v.ano, v.combustivel, v.condicao, v.preco, v.quantidade_estoque " +
+                     "FROM tabela_veiculo v " +
+                     "INNER JOIN gestor_veiculo gv ON v.id = gv.veiculo_id " +
+                     "WHERE gv.gestor_id = ?";
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<Veiculo> veiculos = new ArrayList<>();
+
+        try {
+            st = connection.prepareStatement(sql);
+            st.setString(1, gestorId.toString());
+            rs = st.executeQuery();
+
+            while (rs.next()) {
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("id")));
+                veiculo.setMarca(rs.getString("marca"));
+                veiculo.setModelo(rs.getString("modelo"));
+                veiculo.setAno(rs.getInt("ano"));
+                veiculo.setCombustivel(rs.getString("combustivel"));
+                veiculo.setCondicao(rs.getString("condicao"));
+                veiculo.setPreco(rs.getDouble("preco"));
+                veiculo.setQuantidadeEstoque(rs.getInt("quantidade_estoque"));
+
+                veiculos.add(veiculo);
+            }
+            return veiculos;
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar veículos por ID de gestor: " + e.getMessage());
+        } finally {
+            BancoDeDados.closeResultSet(rs);
+            BancoDeDados.closeStatement(st);
+        }
+    }
+
+    @Override
     public List<Veiculo> buscarVeiculos() {
         String sql = "SELECT * FROM tabela_veiculo";
         Statement st = null;

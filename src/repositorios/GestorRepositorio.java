@@ -32,13 +32,6 @@ public class GestorRepositorio implements Repositorio<Gestor, UUID> {
         // Cadastra o gestor na tabela_gestor
         dao.cadastrar(gestorACadastrar);
 
-        // Se o gestor já vier com veículos vinculados no momento do cadastro
-        if (gestor.getVeiculos() != null && !gestor.getVeiculos().isEmpty()) {
-            for (Veiculo veiculo : gestor.getVeiculos()) {
-                // veiculoDao.vincularGestorEVeiculo(gestor.getId(), veiculo.getId());
-            }
-        }
-
         return gestorACadastrar;
     }
 
@@ -46,9 +39,7 @@ public class GestorRepositorio implements Repositorio<Gestor, UUID> {
     public Gestor buscarPorId(UUID id) {
         Gestor gestor = dao.buscarGestor(id);
         if (gestor != null) {
-            // Busca a lista de veículos gerenciados por este gestor
-            // List<Veiculo> veiculos = veiculoDao.buscarVeiculosPorGestorId(id);
-            // gestor.setVeiculos(veiculos);
+            carregarVeiculos(gestor);
         }
         return gestor;
     }
@@ -57,8 +48,7 @@ public class GestorRepositorio implements Repositorio<Gestor, UUID> {
     public List<Gestor> buscarTodos() {
         List<Gestor> gestores = dao.listarGestores();
         for (Gestor gestor : gestores) {
-            // List<Veiculo> veiculos = veiculoDao.buscarVeiculosPorGestorId(gestor.getId());
-            // gestor.setVeiculos(veiculos);
+            carregarVeiculos(gestor);
         }
         return gestores;
     }
@@ -77,6 +67,13 @@ public class GestorRepositorio implements Repositorio<Gestor, UUID> {
         // Devido ao ON DELETE CASCADE configurado na FK do MySQL,
         // excluir a Pessoa apaga automaticamente o registro da tabela_gestor e os vínculos em gestor_veiculo!
         pessoaDao.excluir(gestor);
+    }
+
+    private void carregarVeiculos(Gestor gestor) {
+        if (gestor.getId() != null) {
+            List<Veiculo> veiculos = veiculoDao.buscarVeiculosPorGestorId(gestor.getId());
+            gestor.setVeiculos(veiculos);
+        }
     }
 
     private void atualizarCampos(Gestor cadastrado, Gestor dados) {
