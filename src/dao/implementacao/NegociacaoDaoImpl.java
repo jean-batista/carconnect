@@ -32,23 +32,28 @@ public class NegociacaoDaoImpl implements NegociacaoDao {
     public void cadastrar(Negociacao negociacao) {
         String sql = "INSERT INTO tabela_negociacao (id, data, cliente_id, vendedor_id, veiculo_id) VALUES (?, ?, ?, ?, ?)";
         PreparedStatement st = null;
-        try {
-            negociacao.setId(UUID.randomUUID()); // Gera um UUID aleatoriamente
+        
+        // Gera um UUID automaticamente caso ainda nao tenha sido definido
+        if (negociacao.getId() == null) {
+            negociacao.setId(UUID.randomUUID());
+        }
 
+        try {
             st = connection.prepareStatement(sql);
             st.setString(1, negociacao.getId().toString()); // Define o id
             st.setObject(2, negociacao.getData()); // Define a data
             st.setString(3, negociacao.getCliente().getId().toString()); // Define id do Cliente
-            st.setString(4, negociacao.getVendedor().getId().toString()); // Define o id da Negociacao
+            st.setString(4, negociacao.getVendedor().getId().toString()); // Define o id do Vendedor
             st.setString(5, negociacao.getVeiculo().getId().toString()); // Define o id do Veiculo
+            
             int linhasAlteradas = st.executeUpdate(); // Executa as mudancas
             
-            // Ocorre um erro caso nao houver linhas alteradas
-            if(linhasAlteradas == 0) throw new BancoException("Não foi possível cadastrar a negociacao");
-        } catch (Exception e) {
-            throw new BancoException("Erro: " + e.getMessage());
+            if (linhasAlteradas == 0) {
+                throw new BancoException("Não foi possível cadastrar a negociação");
+            }
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao cadastrar negociação: " + e.getMessage());
         } finally {
-            // Fecha a conexao com o banco de dados independentemente so `try` ou `catch`
             BancoDeDados.closeStatement(st);
         }
     }
@@ -58,27 +63,34 @@ public class NegociacaoDaoImpl implements NegociacaoDao {
         String sql = "SELECT * FROM tabela_negociacao WHERE id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        Negociacao negociacao = new Negociacao(); // Cria um objeto Negociacao vazio
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Vendedor vazio
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Veiculo vazio
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, id.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                negociacao.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Negociacao
-                negociacao.setData(rs.getObject("data", LocalDateTime.class)); // Define a data
-                cliente.setId(UUID.fromString(rs.getString("cliente_id"))); // Define o id do Cliente
-                vendedor.setId(UUID.fromString(rs.getString("vendedor_id"))); // Define o id do Vendedor
-                veiculo.setId(UUID.fromString(rs.getString("veiculo_id"))); // Define o id do Veiculo
-                negociacao.setCliente(cliente); // Define o Cliente da Negociacao
-                negociacao.setVendedor(vendedor); // Define o Vendedor da Negociacao
-                negociacao.setVeiculo(veiculo); // Define o Veiculo da Negociacao
+
+            if (rs.next()) {
+                Negociacao negociacao = new Negociacao();
+                negociacao.setId(UUID.fromString(rs.getString("id")));
+                negociacao.setData(rs.getObject("data", LocalDateTime.class));
+
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("cliente_id")));
+                negociacao.setCliente(cliente);
+
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("vendedor_id")));
+                negociacao.setVendedor(vendedor);
+
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("veiculo_id")));
+                negociacao.setVeiculo(veiculo);
+
+                return negociacao;
             }
-            return negociacao;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+            return null;
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar negociação por ID: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -90,28 +102,34 @@ public class NegociacaoDaoImpl implements NegociacaoDao {
         String sql = "SELECT * FROM tabela_negociacao";
         Statement st = null;
         ResultSet rs = null;
-        List<Negociacao> negociacoes = new ArrayList<>(); // Cria uma lista de Negociacao
-        Negociacao negociacao = new Negociacao(); // Cria um objeto Negociacao vazio
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Vendedor vazio
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Veiculo vazio
+        List<Negociacao> negociacoes = new ArrayList<>();
+
         try {
             st = connection.createStatement();
             rs = st.executeQuery(sql);
-            while(rs.next()) {
-                negociacao.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Negociacao
-                negociacao.setData(rs.getObject("data", LocalDateTime.class)); // Define a data
-                cliente.setId(UUID.fromString(rs.getString("cliente_id"))); // Define o id do Cliente
-                vendedor.setId(UUID.fromString(rs.getString("vendedor_id"))); // Define o id do Vendedor
-                veiculo.setId(UUID.fromString(rs.getString("veiculo_id"))); // Define o id do Veiculo
-                negociacao.setCliente(cliente); // Define o Cliente da Negociacao
-                negociacao.setVendedor(vendedor); // Define o Vendedor da Negociacao
-                negociacao.setVeiculo(veiculo); // Define o Veiculo da Negociacao
+
+            while (rs.next()) {
+                Negociacao negociacao = new Negociacao();
+                negociacao.setId(UUID.fromString(rs.getString("id")));
+                negociacao.setData(rs.getObject("data", LocalDateTime.class));
+
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("cliente_id")));
+                negociacao.setCliente(cliente);
+
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("vendedor_id")));
+                negociacao.setVendedor(vendedor);
+
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("veiculo_id")));
+                negociacao.setVeiculo(veiculo);
+
                 negociacoes.add(negociacao);
             }
             return negociacoes;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao listar negociações: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -123,29 +141,35 @@ public class NegociacaoDaoImpl implements NegociacaoDao {
         String sql = "SELECT * FROM tabela_negociacao WHERE cliente_id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        List<Negociacao> negociacoes = new ArrayList<>(); // Cria uma lista de Negociacao
-        Negociacao negociacao = new Negociacao(); // Cria um objeto Negociacao vazio
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Vendedor vazio
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Veiculo vazio
+        List<Negociacao> negociacoes = new ArrayList<>();
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, clienteId.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                negociacao.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Negociacao
-                negociacao.setData(rs.getObject("data", LocalDateTime.class)); // Define a data
-                cliente.setId(UUID.fromString(rs.getString("cliente_id"))); // Define o id do Cliente
-                vendedor.setId(UUID.fromString(rs.getString("vendedor_id"))); // Define o id do Vendedor
-                veiculo.setId(UUID.fromString(rs.getString("veiculo_id"))); // Define o id do Veiculo
-                negociacao.setCliente(cliente); // Define o Cliente da Negociacao
-                negociacao.setVendedor(vendedor); // Define o Vendedor da Negociacao
-                negociacao.setVeiculo(veiculo); // Define o Veiculo da Negociacao
+
+            while (rs.next()) {
+                Negociacao negociacao = new Negociacao();
+                negociacao.setId(UUID.fromString(rs.getString("id")));
+                negociacao.setData(rs.getObject("data", LocalDateTime.class));
+
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("cliente_id")));
+                negociacao.setCliente(cliente);
+
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("vendedor_id")));
+                negociacao.setVendedor(vendedor);
+
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("veiculo_id")));
+                negociacao.setVeiculo(veiculo);
+
                 negociacoes.add(negociacao);
             }
             return negociacoes;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar negociações por cliente: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
@@ -157,33 +181,38 @@ public class NegociacaoDaoImpl implements NegociacaoDao {
         String sql = "SELECT * FROM tabela_negociacao WHERE vendedor_id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
-        List<Negociacao> negociacoes = new ArrayList<>(); // Cria uma lista de Negociacao
-        Negociacao negociacao = new Negociacao(); // Cria um objeto Negociacao vazio
-        Cliente cliente = new Cliente(); // Cria um objeto Cliente vazio
-        Vendedor vendedor = new Vendedor(); // Cria um objeto Vendedor vazio
-        Veiculo veiculo = new Veiculo(); // Cria um objeto Veiculo vazio
+        List<Negociacao> negociacoes = new ArrayList<>();
+
         try {
             st = connection.prepareStatement(sql);
             st.setString(1, vendedorId.toString());
             rs = st.executeQuery();
-            while(rs.next()) {
-                negociacao.setId(UUID.fromString(rs.getString("id"))); // Define o id no objeto Negociacao
-                negociacao.setData(rs.getObject("data", LocalDateTime.class)); // Define a data
-                cliente.setId(UUID.fromString(rs.getString("cliente_id"))); // Define o id do Cliente
-                vendedor.setId(UUID.fromString(rs.getString("vendedor_id"))); // Define o id do Vendedor
-                veiculo.setId(UUID.fromString(rs.getString("veiculo_id"))); // Define o id do Veiculo
-                negociacao.setCliente(cliente); // Define o Cliente da Negociacao
-                negociacao.setVendedor(vendedor); // Define o Vendedor da Negociacao
-                negociacao.setVeiculo(veiculo); // Define o Veiculo da Negociacao
+
+            while (rs.next()) {
+                Negociacao negociacao = new Negociacao();
+                negociacao.setId(UUID.fromString(rs.getString("id")));
+                negociacao.setData(rs.getObject("data", LocalDateTime.class));
+
+                Cliente cliente = new Cliente();
+                cliente.setId(UUID.fromString(rs.getString("cliente_id")));
+                negociacao.setCliente(cliente);
+
+                Vendedor vendedor = new Vendedor();
+                vendedor.setId(UUID.fromString(rs.getString("vendedor_id")));
+                negociacao.setVendedor(vendedor);
+
+                Veiculo veiculo = new Veiculo();
+                veiculo.setId(UUID.fromString(rs.getString("veiculo_id")));
+                negociacao.setVeiculo(veiculo);
+
                 negociacoes.add(negociacao);
             }
             return negociacoes;
-        } catch(SQLException e) {
-            throw new BancoException(e.getMessage());
+        } catch (SQLException e) {
+            throw new BancoException("Erro ao buscar negociações por vendedor: " + e.getMessage());
         } finally {
             BancoDeDados.closeResultSet(rs);
             BancoDeDados.closeStatement(st);
         }
     }
-
 }
