@@ -11,6 +11,7 @@ import entidades.Agendamento;
 import entidades.Negociacao;
 import entidades.Pessoa;
 import entidades.Vendedor;
+import repositorios.interfaces.Repositorio;
 
 public class VendedorRepositorio implements Repositorio<Vendedor, UUID> {
 

@@ -1,4 +1,4 @@
-package repositorios;
+package repositorios.interfaces;
 
 import java.util.List;
 

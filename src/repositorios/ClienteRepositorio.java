@@ -11,6 +11,7 @@ import entidades.Agendamento;
 import entidades.Cliente;
 import entidades.Negociacao;
 import entidades.Pessoa;
+import repositorios.interfaces.Repositorio;
 
 public class ClienteRepositorio implements Repositorio<Cliente, UUID> {
 

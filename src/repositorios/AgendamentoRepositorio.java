@@ -9,6 +9,7 @@ import dao.interfaces.VendedorDao;
 import entidades.Agendamento;
 import entidades.Cliente;
 import entidades.Vendedor;
+import repositorios.interfaces.Repositorio;
 
 public class AgendamentoRepositorio implements Repositorio<Agendamento, UUID> {
 

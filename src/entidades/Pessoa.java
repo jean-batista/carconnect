@@ -127,12 +127,4 @@ public class Pessoa {
         return true;
     }
 
-    @Override
-    public String toString() {
-        return "Pessoa [id=" + id + ", nome=" + nome + ", sobrenome=" + sobrenome + ", email=" + email + ", telefone="
-                + telefone + ", cpf=" + cpf + ", senha=" + senha + "]";
-    }
-
-    
-
 }

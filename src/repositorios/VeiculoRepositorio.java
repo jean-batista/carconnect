@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import dao.interfaces.VeiculoDao;
 import entidades.Veiculo;
+import repositorios.interfaces.Repositorio;
 
 public class VeiculoRepositorio implements Repositorio<Veiculo, UUID> {
 

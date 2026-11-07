@@ -9,6 +9,7 @@ import dao.interfaces.VeiculoDao;
 import entidades.Gestor;
 import entidades.Pessoa;
 import entidades.Veiculo;
+import repositorios.interfaces.Repositorio;
 
 public class GestorRepositorio implements Repositorio<Gestor, UUID> {
 

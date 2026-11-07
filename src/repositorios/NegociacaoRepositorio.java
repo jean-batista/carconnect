@@ -11,6 +11,7 @@ import entidades.Cliente;
 import entidades.Negociacao;
 import entidades.Veiculo;
 import entidades.Vendedor;
+import repositorios.interfaces.Repositorio;
 
 public class NegociacaoRepositorio implements Repositorio<Negociacao, UUID> {
 
