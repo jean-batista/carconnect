@@ -89,7 +89,7 @@ public class VeiculoDaoImpl implements VeiculoDao {
     public List<Veiculo> buscarVeiculosPorGestorId(UUID gestorId) {
         String sql = "SELECT v.id, v.marca, v.modelo, v.ano, v.combustivel, v.condicao, v.preco, v.quantidade_estoque " +
                      "FROM tabela_veiculo v " +
-                     "INNER JOIN gestor_veiculo gv ON v.id = gv.veiculo_id " +
+                     "INNER JOIN tabela_gestor_veiculo gv ON v.id = gv.veiculo_id " +
                      "WHERE gv.gestor_id = ?";
         PreparedStatement st = null;
         ResultSet rs = null;
