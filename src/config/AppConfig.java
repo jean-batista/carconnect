@@ -110,7 +110,7 @@ public class AppConfig {
                 "administrador@inicial.com", 
                 "00000000000", 
                 "00000000000", 
-                "admin", 
+                "admin123", 
                 null
             );
 
