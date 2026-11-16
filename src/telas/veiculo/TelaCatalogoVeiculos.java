@@ -1,15 +1,12 @@
 package telas.veiculo;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
-import java.util.List;
 import java.util.UUID;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -18,92 +15,56 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
-import autenticacao.SessaoUsuario;
 import entidades.Veiculo;
 import servicos.VeiculoServico;
+import autenticacao.SessaoUsuario;
+import telas.utils.UiUtils;
 
 /**
- * Tela 3.1: Catálogo e Gestão de Estoque de Veículos.
+ * Catálogo e Gestão de Estoque de Veículos.
  */
 public class TelaCatalogoVeiculos extends JPanel {
 
-    private final VeiculoServico veiculoServico;
+    private final VeiculoServico veiculoServico = new VeiculoServico();
     private JTable tabela;
-    private DefaultTableModel modeloTabela;
+    private DefaultTableModel modelo;
 
     public TelaCatalogoVeiculos() {
-        this.veiculoServico = new VeiculoServico();
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
         inicializarComponentes();
         carregarTabela();
     }
 
     private void inicializarComponentes() {
-        JPanel painelTopo = new JPanel(new BorderLayout());
+        JPanel topo = new JPanel(new BorderLayout());
         JLabel lblTitulo = new JLabel("Catálogo de Veículos");
         lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 20));
-        painelTopo.add(lblTitulo, BorderLayout.WEST);
+        topo.add(lblTitulo, BorderLayout.WEST);
 
-        JPanel painelAcoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-        // Botões exclusivos de Gestor
+        JPanel acoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         if (SessaoUsuario.isGestor()) {
-            JButton btnNovo = new JButton("+ Novo Veículo");
-            btnNovo.setBackground(new Color(39, 174, 96));
-            btnNovo.setForeground(Color.WHITE);
-            btnNovo.addActionListener(e -> abrirFormulario(null));
-
-            JButton btnEditar = new JButton("Editar");
-            btnEditar.addActionListener(e -> editarSelecionado());
-
-            JButton btnEstoque = new JButton("Ajustar Estoque");
-            btnEstoque.addActionListener(e -> ajustarEstoqueSelecionado());
-
-            JButton btnExcluir = new JButton("Excluir");
-            btnExcluir.setBackground(new Color(192, 57, 43));
-            btnExcluir.setForeground(Color.WHITE);
-            btnExcluir.addActionListener(e -> excluirSelecionado());
-
-            painelAcoes.add(btnNovo);
-            painelAcoes.add(btnEditar);
-            painelAcoes.add(btnEstoque);
-            painelAcoes.add(btnExcluir);
+            acoes.add(UiUtils.criarBotao("+ Novo Veículo", UiUtils.COR_SUCESSO, () -> abrirFormulario(null)));
+            acoes.add(UiUtils.criarBotao("Editar", null, this::editarSelecionado));
+            acoes.add(UiUtils.criarBotao("Ajustar Estoque", null, this::ajustarEstoqueSelecionado));
+            acoes.add(UiUtils.criarBotao("Excluir", UiUtils.COR_PERIGO, this::excluirSelecionado));
         }
+        acoes.add(UiUtils.criarBotao("Atualizar", null, this::carregarTabela));
+        topo.add(acoes, BorderLayout.EAST);
+        add(topo, BorderLayout.NORTH);
 
-        JButton btnAtualizar = new JButton("Atualizar Catálogo");
-        btnAtualizar.addActionListener(e -> carregarTabela());
-        painelAcoes.add(btnAtualizar);
-
-        painelTopo.add(painelAcoes, BorderLayout.EAST);
-        add(painelTopo, BorderLayout.NORTH);
-
-        String[] colunas = {"ID", "Marca", "Modelo", "Ano", "Combustível", "Condição", "Preço (R$)", "Estoque"};
-        modeloTabela = new DefaultTableModel(colunas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        tabela = new JTable(modeloTabela);
+        modelo = UiUtils.criarModeloTabela("ID", "Marca", "Modelo", "Ano", "Combustível", "Condição", "Preço (R$)", "Estoque");
+        tabela = UiUtils.criarTabela(modelo);
         add(new JScrollPane(tabela), BorderLayout.CENTER);
     }
 
     private void carregarTabela() {
-        modeloTabela.setRowCount(0);
+        modelo.setRowCount(0);
         try {
-            List<Veiculo> veiculos = veiculoServico.buscarTodos();
-            for (Veiculo v : veiculos) {
-                modeloTabela.addRow(new Object[]{
-                    v.getId(),
-                    v.getMarca(),
-                    v.getModelo(),
-                    v.getAno(),
-                    v.getCombustivel(),
-                    v.getCondicao(),
-                    String.format("%,.2f", v.getPreco()),
-                    v.getQuantidadeEstoque()
+            for (Veiculo v : veiculoServico.buscarTodos()) {
+                modelo.addRow(new Object[]{
+                    v.getId(), v.getMarca(), v.getModelo(), v.getAno(),
+                    v.getCombustivel(), v.getCondicao(), String.format("%,.2f", v.getPreco()), v.getQuantidadeEstoque()
                 });
             }
         } catch (Exception ex) {
@@ -117,54 +78,47 @@ public class TelaCatalogoVeiculos extends JPanel {
     }
 
     private void editarSelecionado() {
-        int linha = tabela.getSelectedRow();
-        if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um veículo na tabela.");
-            return;
-        }
-        UUID id = (UUID) modeloTabela.getValueAt(linha, 0);
-        Veiculo v = veiculoServico.buscarPorId(id);
-        abrirFormulario(v);
+        UUID id = getIdSelecionado();
+        if (id != null) abrirFormulario(veiculoServico.buscarPorId(id));
     }
 
     private void ajustarEstoqueSelecionado() {
-        int linha = tabela.getSelectedRow();
-        if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um veículo na tabela.");
-            return;
-        }
-        UUID id = (UUID) modeloTabela.getValueAt(linha, 0);
+        UUID id = getIdSelecionado();
+        if (id == null) return;
         Veiculo v = veiculoServico.buscarPorId(id);
 
-        String input = JOptionPane.showInputDialog(this, "Nova quantidade em estoque para " + v.getMarca() + " " + v.getModelo() + ":", v.getQuantidadeEstoque());
+        String input = JOptionPane.showInputDialog(this, "Novo estoque para " + v.getMarca() + " " + v.getModelo() + ":", v.getQuantidadeEstoque());
         if (input != null && !input.trim().isEmpty()) {
             try {
-                int novasUnidades = Integer.parseInt(input.trim());
-                veiculoServico.atualizarEstoque(v, novasUnidades);
+                veiculoServico.atualizarEstoque(v, Integer.parseInt(input.trim()));
                 carregarTabela();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao atualizar estoque: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage());
             }
         }
     }
 
     private void excluirSelecionado() {
-        int linha = tabela.getSelectedRow();
-        if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um veículo na tabela.");
-            return;
-        }
-        int confirmacao = JOptionPane.showConfirmDialog(this, "Deseja excluir este veículo do catálogo?", "Confirmação", JOptionPane.YES_NO_OPTION);
-        if (confirmacao == JOptionPane.YES_OPTION) {
+        UUID id = getIdSelecionado();
+        if (id == null) return;
+        if (JOptionPane.showConfirmDialog(this, "Excluir este veículo?", "Confirmação", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
-                UUID id = (UUID) modeloTabela.getValueAt(linha, 0);
                 Veiculo v = new Veiculo();
                 v.setId(id);
                 veiculoServico.excluir(v);
                 carregarTabela();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao excluir veículo: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "Erro ao excluir: " + ex.getMessage());
             }
         }
+    }
+
+    private UUID getIdSelecionado() {
+        int linha = tabela.getSelectedRow();
+        if (linha == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione um veículo na tabela.");
+            return null;
+        }
+        return (UUID) modelo.getValueAt(linha, 0);
     }
 }

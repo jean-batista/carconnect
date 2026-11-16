@@ -1,34 +1,27 @@
 package config;
 
 import java.util.List;
-
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import banco.BancoDeDados;
 import dao.DaoFactory;
 import entidades.Gestor;
-import repositorios.AgendamentoRepositorio;
-import repositorios.ClienteRepositorio;
-import repositorios.GestorRepositorio;
-import repositorios.NegociacaoRepositorio;
-import repositorios.VeiculoRepositorio;
-import repositorios.VendedorRepositorio;
+import repositorios.*;
 import servicos.GestorServico;
 import telas.autenticacao.TelaLogin;
 
 public class AppConfig {
 
     public static void iniciar() {
-        // Inicia a interface gráfica na Event Dispatch Thread (EDT) do Swing
         SwingUtilities.invokeLater(() -> {
             try {
-                // Valida se a conexão com o banco de dados está operando antes de abrir o sistema
                 if (BancoDeDados.getConnection() == null) {
                     throw new RuntimeException("Não foi possível estabelecer conexão com o banco de dados.");
                 }
 
-                // Abre a tela inicial de autenticação
+                configurarAdministrador();
+
                 TelaLogin telaLogin = new TelaLogin();
                 telaLogin.setVisible(true);
                 telaLogin.toFront();
@@ -45,33 +38,30 @@ public class AppConfig {
                 System.exit(1);
             }
         });
-
-        configurarAdministrador();
     }
-    
+
     public static ClienteRepositorio configurarClienteRepositorio() {
         return new ClienteRepositorio(
-            DaoFactory.criarClienteDao(), 
-            DaoFactory.criarPessoaDao(), 
-            DaoFactory.criarAgendamentoDao(), 
+            DaoFactory.criarClienteDao(),
+            DaoFactory.criarPessoaDao(),
+            DaoFactory.criarAgendamentoDao(),
             DaoFactory.criarNegociacaoDao()
         );
     }
 
     public static VendedorRepositorio configurarVendedorRepositorio() {
         return new VendedorRepositorio(
-            DaoFactory.criarVendedorDao(), 
-            DaoFactory.criarPessoaDao(), 
-            DaoFactory.criarAgendamentoDao(), 
+            DaoFactory.criarVendedorDao(),
+            DaoFactory.criarPessoaDao(),
+            DaoFactory.criarAgendamentoDao(),
             DaoFactory.criarNegociacaoDao()
         );
     }
 
     public static GestorRepositorio configurarGestorRepositorio() {
         return new GestorRepositorio(
-            DaoFactory.criarGestorDao(), 
-            DaoFactory.criarPessoaDao(), 
-            DaoFactory.criarVeiculoDao()
+            DaoFactory.criarGestorDao(),
+            DaoFactory.criarPessoaDao()
         );
     }
 
@@ -81,8 +71,8 @@ public class AppConfig {
 
     public static AgendamentoRepositorio configurarAgendamentoRepositorio() {
         return new AgendamentoRepositorio(
-            DaoFactory.criarAgendamentoDao(), 
-            DaoFactory.criarClienteDao(), 
+            DaoFactory.criarAgendamentoDao(),
+            DaoFactory.criarClienteDao(),
             DaoFactory.criarVendedorDao()
         );
     }
@@ -98,24 +88,19 @@ public class AppConfig {
 
     private static void configurarAdministrador() {
         GestorServico servico = new GestorServico();
-
         List<Gestor> lista = servico.buscarTodos();
 
-        if(lista.isEmpty()) {
-
+        if (lista.isEmpty()) {
             Gestor gestor = new Gestor(
-                null, 
-                "Administrador", 
-                "Inicial", 
-                "administrador@inicial.com", 
-                "00000000000", 
-                "00000000000", 
-                "admin123", 
-                null
+                null,
+                "Administrador",
+                "Inicial",
+                "administrador@inicial.com",
+                "00000000000",
+                "00000000000",
+                "admin123"
             );
-
             servico.cadastrar(gestor);
         }
     }
-
 }

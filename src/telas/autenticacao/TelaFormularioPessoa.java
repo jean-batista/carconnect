@@ -1,13 +1,10 @@
 package telas.autenticacao;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -22,21 +19,22 @@ import entidades.Vendedor;
 import servicos.ClienteServico;
 import servicos.GestorServico;
 import servicos.VendedorServico;
+import autenticacao.SessaoUsuario;
+import telas.utils.UiUtils;
 
 /**
- * Tela 2.1 (Reutilizável): Formulário unificado de Cadastro/Edição de Pessoa (Cliente, Vendedor ou Gestor).
+ * Formulário unificado de Cadastro/Edição de Pessoa.
+ * Se cadastrado por um usuário já logado (Gestor/Vendedor), oculta o campo senha
+ * e define o CPF automaticamente como senha provisória.
  */
 public class TelaFormularioPessoa extends JDialog {
 
-    private final String tipoPerfil; // "CLIENTE", "VENDEDOR" ou "GESTOR"
+    private final String tipoPerfil;
     private final Pessoa pessoaEdicao;
     private final Runnable onSuccess;
+    private final boolean cadastroInterno;
 
-    private JTextField txtNome;
-    private JTextField txtSobrenome;
-    private JTextField txtCpf;
-    private JTextField txtEmail;
-    private JTextField txtTelefone;
+    private JTextField txtNome, txtSobrenome, txtCpf, txtEmail, txtTelefone;
     private JPasswordField txtSenha;
 
     public TelaFormularioPessoa(Frame parent, String tipoPerfil, Pessoa pessoaEdicao, Runnable onSuccess) {
@@ -44,24 +42,22 @@ public class TelaFormularioPessoa extends JDialog {
         this.tipoPerfil = tipoPerfil;
         this.pessoaEdicao = pessoaEdicao;
         this.onSuccess = onSuccess;
+        this.cadastroInterno = (SessaoUsuario.getUsuarioLogado() != null && pessoaEdicao == null);
 
-        configurarJanela();
+        setTitle((pessoaEdicao == null ? "Cadastrar " : "Editar ") + tipoPerfil);
+        setSize(400, cadastroInterno ? 340 : 390);
+        setLocationRelativeTo(parent);
+        setResizable(false);
+        setLayout(new BorderLayout());
+
         inicializarComponentes();
         preencherDadosSeEdicao();
     }
 
-    private void configurarJanela() {
-        String acao = (pessoaEdicao == null) ? "Cadastrar " : "Editar ";
-        setTitle(acao + tipoPerfil);
-        setSize(420, 420);
-        setLocationRelativeTo(getParent());
-        setResizable(false);
-        setLayout(new BorderLayout());
-    }
-
     private void inicializarComponentes() {
-        JPanel painelCampos = new JPanel(new GridLayout(6, 2, 10, 12));
-        painelCampos.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        int linhas = cadastroInterno ? 5 : 6;
+        JPanel painelCampos = new JPanel(new GridLayout(linhas, 2, 10, 12));
+        painelCampos.setBorder(BorderFactory.createEmptyBorder(20, 25, 15, 25));
 
         painelCampos.add(new JLabel("Nome:"));
         txtNome = new JTextField();
@@ -83,27 +79,18 @@ public class TelaFormularioPessoa extends JDialog {
         txtTelefone = new JTextField();
         painelCampos.add(txtTelefone);
 
-        painelCampos.add(new JLabel("Senha:"));
-        txtSenha = new JPasswordField();
-        painelCampos.add(txtSenha);
+        if (!cadastroInterno) {
+            painelCampos.add(new JLabel("Senha:"));
+            txtSenha = new JPasswordField();
+            painelCampos.add(txtSenha);
+        }
 
         add(painelCampos, BorderLayout.CENTER);
 
-        // Rodapé
         JPanel painelBotoes = new JPanel();
         painelBotoes.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-
-        JButton btnSalvar = new JButton("Salvar");
-        btnSalvar.setBackground(new Color(39, 174, 96));
-        btnSalvar.setForeground(Color.WHITE);
-        btnSalvar.setFont(new Font("SansSerif", Font.BOLD, 13));
-        btnSalvar.addActionListener(e -> salvar());
-
-        JButton btnCancelar = new JButton("Cancelar");
-        btnCancelar.addActionListener(e -> dispose());
-
-        painelBotoes.add(btnSalvar);
-        painelBotoes.add(btnCancelar);
+        painelBotoes.add(UiUtils.criarBotao("Salvar", UiUtils.COR_SUCESSO, this::salvar));
+        painelBotoes.add(UiUtils.criarBotao("Cancelar", null, this::dispose));
         add(painelBotoes, BorderLayout.SOUTH);
     }
 
@@ -114,41 +101,36 @@ public class TelaFormularioPessoa extends JDialog {
             txtCpf.setText(pessoaEdicao.getCpf());
             txtEmail.setText(pessoaEdicao.getEmail());
             txtTelefone.setText(pessoaEdicao.getTelefone());
-            txtSenha.setText(pessoaEdicao.getSenha());
+            if (txtSenha != null) txtSenha.setText(pessoaEdicao.getSenha());
         }
     }
 
     private void salvar() {
         try {
-            String nome = txtNome.getText().trim();
-            String sobrenome = txtSobrenome.getText().trim();
             String cpf = txtCpf.getText().trim();
-            String email = txtEmail.getText().trim();
-            String telefone = txtTelefone.getText().trim();
-            String senha = new String(txtSenha.getPassword());
+            // Senha provisória = CPF quando cadastrado internamente por Gestor/Vendedor
+            String senha = cadastroInterno ? cpf.replaceAll("\\D", "") : new String(txtSenha.getPassword());
 
             if ("CLIENTE".equalsIgnoreCase(tipoPerfil)) {
-                ClienteServico servico = new ClienteServico();
                 Cliente c = (pessoaEdicao != null) ? (Cliente) pessoaEdicao : new Cliente();
-                preencherAtributos(c, nome, sobrenome, cpf, email, telefone, senha);
-                if (pessoaEdicao == null) servico.cadastrar(c);
-                else servico.atualizar(c);
-
+                preencher(c, cpf, senha);
+                ClienteServico s = new ClienteServico();
+                if (pessoaEdicao == null) s.cadastrar(c); else s.atualizar(c);
             } else if ("VENDEDOR".equalsIgnoreCase(tipoPerfil)) {
-                VendedorServico servico = new VendedorServico();
                 Vendedor v = (pessoaEdicao != null) ? (Vendedor) pessoaEdicao : new Vendedor();
-                preencherAtributos(v, nome, sobrenome, cpf, email, telefone, senha);
-                if (pessoaEdicao == null) servico.cadastrar(v);
-                else servico.atualizar(v);
-
+                preencher(v, cpf, senha);
+                VendedorServico s = new VendedorServico();
+                if (pessoaEdicao == null) s.cadastrar(v); else s.atualizar(v);
             } else if ("GESTOR".equalsIgnoreCase(tipoPerfil)) {
-                GestorServico servico = new GestorServico();
                 Gestor g = (pessoaEdicao != null) ? (Gestor) pessoaEdicao : new Gestor();
-                preencherAtributos(g, nome, sobrenome, cpf, email, telefone, senha);
-                if (pessoaEdicao == null) servico.cadastrar(g);
-                else servico.atualizar(g);
+                preencher(g, cpf, senha);
+                GestorServico s = new GestorServico();
+                if (pessoaEdicao == null) s.cadastrar(g); else s.atualizar(g);
             }
 
+            if (cadastroInterno) {
+                JOptionPane.showMessageDialog(this, "Cadastrado com sucesso!\nSenha provisória definida como o CPF do usuário.");
+            }
             if (onSuccess != null) onSuccess.run();
             dispose();
 
@@ -157,12 +139,12 @@ public class TelaFormularioPessoa extends JDialog {
         }
     }
 
-    private void preencherAtributos(Pessoa p, String nome, String sobrenome, String cpf, String email, String telefone, String senha) {
-        p.setNome(nome);
-        p.setSobrenome(sobrenome);
+    private void preencher(Pessoa p, String cpf, String senha) {
+        p.setNome(txtNome.getText().trim());
+        p.setSobrenome(txtSobrenome.getText().trim());
         p.setCpf(cpf);
-        p.setEmail(email);
-        p.setTelefone(telefone);
+        p.setEmail(txtEmail.getText().trim());
+        p.setTelefone(txtTelefone.getText().trim());
         p.setSenha(senha);
     }
 }

@@ -1,13 +1,10 @@
 package telas.veiculo;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -17,92 +14,74 @@ import javax.swing.JTextField;
 
 import entidades.Veiculo;
 import servicos.VeiculoServico;
+import telas.utils.UiUtils;
 
 /**
- * Tela 3.2: Modal de Cadastro/Edição de Veículos.
+ * Modal de Cadastro/Edição de Veículos.
  */
 public class TelaFormularioVeiculo extends JDialog {
 
-    private final VeiculoServico veiculoServico;
+    private final VeiculoServico veiculoServico = new VeiculoServico();
     private final Veiculo veiculoEdicao;
     private final Runnable onSuccess;
 
-    private JTextField txtMarca;
-    private JTextField txtModelo;
-    private JTextField txtAno;
-    private JComboBox<String> cbCombustivel;
-    private JComboBox<String> cbCondicao;
-    private JTextField txtPreco;
-    private JTextField txtEstoque;
+    private JTextField txtMarca, txtModelo, txtAno, txtPreco, txtEstoque;
+    private JComboBox<String> cbCombustivel, cbCondicao;
 
     public TelaFormularioVeiculo(Frame parent, Veiculo veiculoEdicao, Runnable onSuccess) {
         super(parent, true);
-        this.veiculoServico = new VeiculoServico();
         this.veiculoEdicao = veiculoEdicao;
         this.onSuccess = onSuccess;
 
-        configurarJanela();
+        setTitle(veiculoEdicao == null ? "Cadastrar Veículo" : "Editar Veículo");
+        setSize(400, 420);
+        setLocationRelativeTo(parent);
+        setResizable(false);
+        setLayout(new BorderLayout());
+
         inicializarComponentes();
         preencherSeEdicao();
     }
 
-    private void configurarJanela() {
-        setTitle(veiculoEdicao == null ? "Cadastrar Veículo" : "Editar Veículo");
-        setSize(420, 440);
-        setLocationRelativeTo(getParent());
-        setResizable(false);
-        setLayout(new BorderLayout());
-    }
-
     private void inicializarComponentes() {
-        JPanel painelCampos = new JPanel(new GridLayout(7, 2, 10, 12));
-        painelCampos.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        JPanel campos = new JPanel(new GridLayout(7, 2, 10, 12));
+        campos.setBorder(BorderFactory.createEmptyBorder(20, 25, 15, 25));
 
-        painelCampos.add(new JLabel("Marca:"));
+        campos.add(new JLabel("Marca:"));
         txtMarca = new JTextField();
-        painelCampos.add(txtMarca);
+        campos.add(txtMarca);
 
-        painelCampos.add(new JLabel("Modelo:"));
+        campos.add(new JLabel("Modelo:"));
         txtModelo = new JTextField();
-        painelCampos.add(txtModelo);
+        campos.add(txtModelo);
 
-        painelCampos.add(new JLabel("Ano:"));
+        campos.add(new JLabel("Ano:"));
         txtAno = new JTextField();
-        painelCampos.add(txtAno);
+        campos.add(txtAno);
 
-        painelCampos.add(new JLabel("Combustível:"));
+        campos.add(new JLabel("Combustível:"));
         cbCombustivel = new JComboBox<>(new String[]{"Flex", "Gasolina", "Etanol", "Diesel", "Elétrico", "Híbrido"});
-        painelCampos.add(cbCombustivel);
+        campos.add(cbCombustivel);
 
-        painelCampos.add(new JLabel("Condição:"));
+        campos.add(new JLabel("Condição:"));
         cbCondicao = new JComboBox<>(new String[]{"Novo", "Seminovo", "Usado"});
-        painelCampos.add(cbCondicao);
+        campos.add(cbCondicao);
 
-        painelCampos.add(new JLabel("Preço (R$):"));
+        campos.add(new JLabel("Preço (R$):"));
         txtPreco = new JTextField();
-        painelCampos.add(txtPreco);
+        campos.add(txtPreco);
 
-        painelCampos.add(new JLabel("Quantidade em Estoque:"));
+        campos.add(new JLabel("Estoque:"));
         txtEstoque = new JTextField();
-        painelCampos.add(txtEstoque);
+        campos.add(txtEstoque);
 
-        add(painelCampos, BorderLayout.CENTER);
+        add(campos, BorderLayout.CENTER);
 
-        JPanel painelBotoes = new JPanel();
-        painelBotoes.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-
-        JButton btnSalvar = new JButton("Salvar");
-        btnSalvar.setBackground(new Color(39, 174, 96));
-        btnSalvar.setForeground(Color.WHITE);
-        btnSalvar.setFont(new Font("SansSerif", Font.BOLD, 13));
-        btnSalvar.addActionListener(e -> salvar());
-
-        JButton btnCancelar = new JButton("Cancelar");
-        btnCancelar.addActionListener(e -> dispose());
-
-        painelBotoes.add(btnSalvar);
-        painelBotoes.add(btnCancelar);
-        add(painelBotoes, BorderLayout.SOUTH);
+        JPanel botoes = new JPanel();
+        botoes.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        botoes.add(UiUtils.criarBotao("Salvar", UiUtils.COR_SUCESSO, this::salvar));
+        botoes.add(UiUtils.criarBotao("Cancelar", null, this::dispose));
+        add(botoes, BorderLayout.SOUTH);
     }
 
     private void preencherSeEdicao() {
@@ -128,19 +107,15 @@ public class TelaFormularioVeiculo extends JDialog {
             v.setPreco(Double.parseDouble(txtPreco.getText().trim().replace(",", ".")));
             v.setQuantidadeEstoque(Integer.parseInt(txtEstoque.getText().trim()));
 
-            if (veiculoEdicao == null) {
-                veiculoServico.cadastrar(v);
-            } else {
-                veiculoServico.atualizar(v);
-            }
+            if (veiculoEdicao == null) veiculoServico.cadastrar(v);
+            else veiculoServico.atualizar(v);
 
             if (onSuccess != null) onSuccess.run();
             dispose();
-
-        } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(this, "Verifique os campos numéricos (Ano, Preço e Estoque).", "Erro de Formato", JOptionPane.ERROR_MESSAGE);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Verifique os campos numéricos (Ano, Preço e Estoque).");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao salvar veículo: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage());
         }
     }
 }

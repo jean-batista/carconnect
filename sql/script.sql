@@ -43,17 +43,7 @@ CREATE TABLE tabela_veiculo (
     quantidade_estoque INT NOT NULL DEFAULT 0
 );
 
--- 6. Relacionamento Gestor <-> Veiculo
--- Representa a List<Veiculo> dentro da classe Gestor
-CREATE TABLE tabela_gestor_veiculo (
-    gestor_id VARCHAR(36) NOT NULL,
-    veiculo_id VARCHAR(36) NOT NULL,
-    PRIMARY KEY (gestor_id, veiculo_id),
-    CONSTRAINT fk_gestor_id FOREIGN KEY (gestor_id) REFERENCES tabela_gestor(id) ON DELETE CASCADE,
-    CONSTRAINT fk_veiculo_gestor_id FOREIGN KEY (veiculo_id) REFERENCES tabela_veiculo(id) ON DELETE CASCADE
-);
-
--- 7. Tabela Agendamento
+-- 6. Tabela Agendamento
 -- Vincula o Cliente e o Vendedor com suas respectivas chaves estrangeiras
 CREATE TABLE tabela_agendamento (
     id VARCHAR(36) PRIMARY KEY,
@@ -65,7 +55,7 @@ CREATE TABLE tabela_agendamento (
     CONSTRAINT fk_agendamento_vendedor FOREIGN KEY (vendedor_id) REFERENCES tabela_vendedor(id) ON DELETE CASCADE
 );
 
--- 8. Tabela Negociacao
+-- 7. Tabela Negociacao
 -- Vincula o Cliente, o Vendedor e o Veiculo negociado
 CREATE TABLE tabela_negociacao (
     id VARCHAR(36) PRIMARY KEY,

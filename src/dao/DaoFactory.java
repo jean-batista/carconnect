@@ -1,49 +1,41 @@
 package dao;
 
 import banco.BancoDeDados;
-import dao.implementacao.AgendamentoDaoImpl;
-import dao.implementacao.ClienteDaoImpl;
-import dao.implementacao.GestorDaoImpl;
-import dao.implementacao.NegociacaoDaoImpl;
-import dao.implementacao.PessoaDaoImpl;
-import dao.implementacao.VeiculoDaoImpl;
-import dao.implementacao.VendedorDaoImpl;
-import dao.interfaces.AgendamentoDao;
-import dao.interfaces.ClienteDao;
-import dao.interfaces.GestorDao;
-import dao.interfaces.NegociacaoDao;
-import dao.interfaces.PessoaDao;
-import dao.interfaces.VeiculoDao;
-import dao.interfaces.VendedorDao;
+import dao.implementacao.AgendamentoDao;
+import dao.implementacao.ClienteDao;
+import dao.implementacao.GestorDao;
+import dao.implementacao.NegociacaoDao;
+import dao.implementacao.PessoaDao;
+import dao.implementacao.VeiculoDao;
+import dao.implementacao.VendedorDao;
 
 public class DaoFactory {
 
     public static PessoaDao criarPessoaDao() {
-        return new PessoaDaoImpl(BancoDeDados.getConnection());
+        return new PessoaDao(BancoDeDados.getConnection());
     }
 
     public static ClienteDao criarClienteDao() {
-        return new ClienteDaoImpl(BancoDeDados.getConnection());
+        return new ClienteDao(BancoDeDados.getConnection());
     }
 
     public static VendedorDao criarVendedorDao() {
-        return new VendedorDaoImpl(BancoDeDados.getConnection());
+        return new VendedorDao(BancoDeDados.getConnection());
     }
 
     public static GestorDao criarGestorDao() {
-        return new GestorDaoImpl(BancoDeDados.getConnection());
+        return new GestorDao(BancoDeDados.getConnection());
     }
 
     public static VeiculoDao criarVeiculoDao() {
-        return new VeiculoDaoImpl(BancoDeDados.getConnection());
+        return new VeiculoDao(BancoDeDados.getConnection());
     }
 
     public static AgendamentoDao criarAgendamentoDao() {
-        return new AgendamentoDaoImpl(BancoDeDados.getConnection());
+        return new AgendamentoDao(BancoDeDados.getConnection());
     }
 
     public static NegociacaoDao criarNegociacaoDao() {
-        return new NegociacaoDaoImpl(BancoDeDados.getConnection());
+        return new NegociacaoDao(BancoDeDados.getConnection());
     }
-
 }

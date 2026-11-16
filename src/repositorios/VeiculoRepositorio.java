@@ -3,7 +3,7 @@ package repositorios;
 import java.util.List;
 import java.util.UUID;
 
-import dao.interfaces.VeiculoDao;
+import dao.implementacao.VeiculoDao;
 import entidades.Veiculo;
 import repositorios.interfaces.Repositorio;
 
@@ -11,30 +11,28 @@ public class VeiculoRepositorio implements Repositorio<Veiculo, UUID> {
 
     private final VeiculoDao dao;
 
-    // Construtor desacoplado com injeção de dependência do VeiculoDao
     public VeiculoRepositorio(VeiculoDao dao) {
         this.dao = dao;
     }
 
     @Override
     public Veiculo cadastrar(Veiculo veiculo) {
-        dao.cadastro(veiculo);
-        return veiculo;
+        return dao.inserir(veiculo);
     }
 
     @Override
     public Veiculo buscarPorId(UUID id) {
-        return dao.buscarVeiculoPeloId(id);
+        return dao.buscarPorId(id);
     }
 
     @Override
     public List<Veiculo> buscarTodos() {
-        return dao.buscarVeiculos();
+        return dao.buscarTodos();
     }
 
     @Override
     public void atualizar(Veiculo veiculo) {
-        Veiculo cadastrado = dao.buscarVeiculoPeloId(veiculo.getId());
+        Veiculo cadastrado = dao.buscarPorId(veiculo.getId());
         if (cadastrado != null) {
             atualizarCampos(cadastrado, veiculo);
             dao.atualizar(cadastrado);
@@ -46,9 +44,6 @@ public class VeiculoRepositorio implements Repositorio<Veiculo, UUID> {
         dao.excluir(veiculo);
     }
 
-    /**
-     * Método utilitário exclusivo do VeiculoRepositorio para atualizar a quantidade em estoque.
-     */
     public void atualizarEstoque(Veiculo veiculo, Integer novasUnidades) {
         dao.atualizarEstoque(veiculo, novasUnidades);
     }
