@@ -1,0 +1,4 @@
+user=USUARIO_DO_MYSQL
+password=SENHA_DO_USUARIO_DO_MYSQL
+url=jdbc:mysql://URL_DO_MYSQL:PORTA_DO_MYSQL/NOME_DO_BANCO
+serverTimezone=UTC
