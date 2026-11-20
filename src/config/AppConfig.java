@@ -6,8 +6,8 @@ import javax.swing.SwingUtilities;
 
 import banco.BancoDeDados;
 import dao.DaoFactory;
+import dao.implementacao.*;
 import entidades.Gestor;
-import repositorios.*;
 import servicos.GestorServico;
 import telas.autenticacao.TelaLogin;
 
@@ -40,51 +40,13 @@ public class AppConfig {
         });
     }
 
-    public static ClienteRepositorio configurarClienteRepositorio() {
-        return new ClienteRepositorio(
-            DaoFactory.criarClienteDao(),
-            DaoFactory.criarPessoaDao(),
-            DaoFactory.criarAgendamentoDao(),
-            DaoFactory.criarNegociacaoDao()
-        );
-    }
-
-    public static VendedorRepositorio configurarVendedorRepositorio() {
-        return new VendedorRepositorio(
-            DaoFactory.criarVendedorDao(),
-            DaoFactory.criarPessoaDao(),
-            DaoFactory.criarAgendamentoDao(),
-            DaoFactory.criarNegociacaoDao()
-        );
-    }
-
-    public static GestorRepositorio configurarGestorRepositorio() {
-        return new GestorRepositorio(
-            DaoFactory.criarGestorDao(),
-            DaoFactory.criarPessoaDao()
-        );
-    }
-
-    public static VeiculoRepositorio configurarVeiculoRepositorio() {
-        return new VeiculoRepositorio(DaoFactory.criarVeiculoDao());
-    }
-
-    public static AgendamentoRepositorio configurarAgendamentoRepositorio() {
-        return new AgendamentoRepositorio(
-            DaoFactory.criarAgendamentoDao(),
-            DaoFactory.criarClienteDao(),
-            DaoFactory.criarVendedorDao()
-        );
-    }
-
-    public static NegociacaoRepositorio configurarNegociacaoRepositorio() {
-        return new NegociacaoRepositorio(
-            DaoFactory.criarNegociacaoDao(),
-            DaoFactory.criarClienteDao(),
-            DaoFactory.criarVendedorDao(),
-            DaoFactory.criarVeiculoDao()
-        );
-    }
+    public static PessoaDao criarPessoaDao() { return DaoFactory.criarPessoaDao(); }
+    public static ClienteDao criarClienteDao() { return DaoFactory.criarClienteDao(); }
+    public static VendedorDao criarVendedorDao() { return DaoFactory.criarVendedorDao(); }
+    public static GestorDao criarGestorDao() { return DaoFactory.criarGestorDao(); }
+    public static VeiculoDao criarVeiculoDao() { return DaoFactory.criarVeiculoDao(); }
+    public static AgendamentoDao criarAgendamentoDao() { return DaoFactory.criarAgendamentoDao(); }
+    public static NegociacaoDao criarNegociacaoDao() { return DaoFactory.criarNegociacaoDao(); }
 
     private static void configurarAdministrador() {
         GestorServico servico = new GestorServico();

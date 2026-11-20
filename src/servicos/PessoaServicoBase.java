@@ -2,17 +2,56 @@ package servicos;
 
 import java.util.UUID;
 
+import dao.implementacao.PessoaDao;
+import dao.implementacao.PessoaSubclasseDao;
 import entidades.Pessoa;
-import repositorios.PessoaRepositorioBase;
 
 /**
- * Classe abstrata intermediária que unifica as validações cadastrais
- * de Cliente, Vendedor e Gestor (Nome, CPF, E-mail e Senha).
+ * Classe abstrata intermediária que unifica validações cadastrais,
+ * inserção em tabela_pessoa + subclasse e mesclagem de campos na atualização.
  */
 public abstract class PessoaServicoBase<T extends Pessoa> extends ServicoBase<T, UUID> {
 
-    protected PessoaServicoBase(PessoaRepositorioBase<T> repositorio) {
-        super(repositorio);
+    protected final PessoaDao pessoaDao;
+
+    protected PessoaServicoBase(PessoaSubclasseDao<T> dao, PessoaDao pessoaDao) {
+        super(dao);
+        this.pessoaDao = pessoaDao;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T cadastrar(T entidade) {
+        validar(entidade);
+        Pessoa pessoa = pessoaDao.inserir(entidade);
+        return dao.inserir((T) pessoa);
+    }
+
+    @Override
+    public void atualizar(T entidade) {
+        validar(entidade);
+        T cadastrado = dao.buscarPorId(entidade.getId());
+        if (cadastrado != null) {
+            atualizarCamposComuns(cadastrado, entidade);
+            pessoaDao.atualizar(cadastrado);
+        }
+    }
+
+    @Override
+    public void excluir(T entidade) {
+        if (entidade == null) {
+            throw new IllegalArgumentException("A entidade para exclusão não pode ser nula.");
+        }
+        pessoaDao.excluir(entidade);
+    }
+
+    private void atualizarCamposComuns(T cadastrado, T dados) {
+        if (dados.getNome() != null) cadastrado.setNome(dados.getNome());
+        if (dados.getSobrenome() != null) cadastrado.setSobrenome(dados.getSobrenome());
+        if (dados.getEmail() != null) cadastrado.setEmail(dados.getEmail());
+        if (dados.getTelefone() != null) cadastrado.setTelefone(dados.getTelefone());
+        if (dados.getCpf() != null) cadastrado.setCpf(dados.getCpf());
+        if (dados.getSenha() != null) cadastrado.setSenha(dados.getSenha());
     }
 
     @Override

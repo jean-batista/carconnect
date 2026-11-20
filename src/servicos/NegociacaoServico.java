@@ -5,23 +5,33 @@ import java.util.List;
 import java.util.UUID;
 
 import config.AppConfig;
+import dao.implementacao.ClienteDao;
+import dao.implementacao.NegociacaoDao;
+import dao.implementacao.VeiculoDao;
+import dao.implementacao.VendedorDao;
 import entidades.Negociacao;
 import entidades.Veiculo;
-import repositorios.NegociacaoRepositorio;
-import repositorios.VeiculoRepositorio;
 
 public class NegociacaoServico extends ServicoBase<Negociacao, UUID> {
 
-    private final VeiculoRepositorio veiculoRepositorio;
+    private final ClienteDao clienteDao;
+    private final VendedorDao vendedorDao;
+    private final VeiculoDao veiculoDao;
 
     public NegociacaoServico() {
-        super(AppConfig.configurarNegociacaoRepositorio());
-        this.veiculoRepositorio = AppConfig.configurarVeiculoRepositorio();
+        this(
+            AppConfig.criarNegociacaoDao(),
+            AppConfig.criarClienteDao(),
+            AppConfig.criarVendedorDao(),
+            AppConfig.criarVeiculoDao()
+        );
     }
 
-    public NegociacaoServico(NegociacaoRepositorio repositorio, VeiculoRepositorio veiculoRepositorio) {
-        super(repositorio);
-        this.veiculoRepositorio = veiculoRepositorio;
+    public NegociacaoServico(NegociacaoDao dao, ClienteDao clienteDao, VendedorDao vendedorDao, VeiculoDao veiculoDao) {
+        super(dao);
+        this.clienteDao = clienteDao;
+        this.vendedorDao = vendedorDao;
+        this.veiculoDao = veiculoDao;
     }
 
     @Override
@@ -31,7 +41,7 @@ public class NegociacaoServico extends ServicoBase<Negociacao, UUID> {
         }
         validar(negociacao);
 
-        Veiculo veiculo = veiculoRepositorio.buscarPorId(negociacao.getVeiculo().getId());
+        Veiculo veiculo = veiculoDao.buscarPorId(negociacao.getVeiculo().getId());
         if (veiculo == null) {
             throw new IllegalArgumentException("Veículo selecionado não encontrado.");
         }
@@ -40,18 +50,31 @@ public class NegociacaoServico extends ServicoBase<Negociacao, UUID> {
         }
 
         Negociacao cadastrada = super.cadastrar(negociacao);
-        veiculoRepositorio.atualizarEstoque(veiculo, veiculo.getQuantidadeEstoque() - 1);
+        veiculoDao.atualizarEstoque(veiculo, veiculo.getQuantidadeEstoque() - 1);
         return cadastrada;
     }
 
     public List<Negociacao> buscarPorClienteId(UUID clienteId) {
         if (clienteId == null) throw new IllegalArgumentException("O ID do cliente não pode ser nulo.");
-        return ((NegociacaoRepositorio) repositorio).buscarPorClienteId(clienteId);
+        return preencherLista(((NegociacaoDao) dao).buscarPorClienteId(clienteId));
     }
 
     public List<Negociacao> buscarPorVendedorId(UUID vendedorId) {
         if (vendedorId == null) throw new IllegalArgumentException("O ID do vendedor não pode ser nulo.");
-        return ((NegociacaoRepositorio) repositorio).buscarPorVendedorId(vendedorId);
+        return preencherLista(((NegociacaoDao) dao).buscarPorVendedorId(vendedorId));
+    }
+
+    @Override
+    protected void carregarRelacionamentos(Negociacao n) {
+        if (n.getCliente() != null && n.getCliente().getId() != null) {
+            n.setCliente(clienteDao.buscarPorId(n.getCliente().getId()));
+        }
+        if (n.getVendedor() != null && n.getVendedor().getId() != null) {
+            n.setVendedor(vendedorDao.buscarPorId(n.getVendedor().getId()));
+        }
+        if (n.getVeiculo() != null && n.getVeiculo().getId() != null) {
+            n.setVeiculo(veiculoDao.buscarPorId(n.getVeiculo().getId()));
+        }
     }
 
     @Override

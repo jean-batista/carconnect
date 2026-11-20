@@ -1,18 +1,18 @@
 package servicos;
 
 import java.util.List;
-import repositorios.interfaces.Repositorio;
+import dao.DaoGenerico;
 
 /**
  * Classe abstrata genérica que centraliza as operações CRUD básicas
- * e validações de nulidade/ID para todos os serviços do sistema.
+ * e validações de nulidade/ID diretamente sobre o DaoGenerico.
  */
 public abstract class ServicoBase<T, ID> {
 
-    protected final Repositorio<T, ID> repositorio;
+    protected final DaoGenerico<T, ID> dao;
 
-    protected ServicoBase(Repositorio<T, ID> repositorio) {
-        this.repositorio = repositorio;
+    protected ServicoBase(DaoGenerico<T, ID> dao) {
+        this.dao = dao;
     }
 
     /**
@@ -24,31 +24,49 @@ public abstract class ServicoBase<T, ID> {
         }
     }
 
+    /**
+     * Hook opcional para carregar relacionamentos (ex: Cliente e Vendedor em Agendamento).
+     */
+    protected void carregarRelacionamentos(T entidade) {
+        // Por padrão não carrega relacionamentos extras
+    }
+
+    protected List<T> preencherLista(List<T> lista) {
+        for (T item : lista) {
+            carregarRelacionamentos(item);
+        }
+        return lista;
+    }
+
     public T cadastrar(T entidade) {
         validar(entidade);
-        return repositorio.cadastrar(entidade);
+        return dao.inserir(entidade);
     }
 
     public T buscarPorId(ID id) {
         if (id == null) {
             throw new IllegalArgumentException("O ID para busca não pode ser nulo.");
         }
-        return repositorio.buscarPorId(id);
+        T entidade = dao.buscarPorId(id);
+        if (entidade != null) {
+            carregarRelacionamentos(entidade);
+        }
+        return entidade;
     }
 
     public List<T> buscarTodos() {
-        return repositorio.buscarTodos();
+        return preencherLista(dao.buscarTodos());
     }
 
     public void atualizar(T entidade) {
         validar(entidade);
-        repositorio.atualizar(entidade);
+        dao.atualizar(entidade);
     }
 
     public void excluir(T entidade) {
         if (entidade == null) {
             throw new IllegalArgumentException("A entidade para exclusão não pode ser nula.");
         }
-        repositorio.excluir(entidade);
+        dao.excluir(entidade);
     }
 }

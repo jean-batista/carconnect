@@ -1,16 +1,17 @@
 package servicos;
 
 import config.AppConfig;
+import dao.implementacao.GestorDao;
+import dao.implementacao.PessoaDao;
 import entidades.Gestor;
-import repositorios.GestorRepositorio;
 
 public class GestorServico extends PessoaServicoBase<Gestor> {
 
     public GestorServico() {
-        super(AppConfig.configurarGestorRepositorio());
+        this(AppConfig.criarGestorDao(), AppConfig.criarPessoaDao());
     }
 
-    public GestorServico(GestorRepositorio repositorio) {
-        super(repositorio);
+    public GestorServico(GestorDao dao, PessoaDao pessoaDao) {
+        super(dao, pessoaDao);
     }
 }
